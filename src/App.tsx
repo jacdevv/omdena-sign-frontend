@@ -41,14 +41,11 @@ function App() {
   const webcamRef = useRef<Webcam>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [recording, setRecording] = useState<boolean>(false);
-  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
 
-  const [videoLink, setVideoLink] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [inference, setInference] = useState<string | null>(null);
 
   const [currentState, setCurrentState] = useState<string>("idle");
-  const [skeletonVideoLink, setSkeletonVideoLink] = useState<string | null>();
 
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
 
@@ -78,7 +75,6 @@ function App() {
 
       mediaRecorderRef.current.onstop = () => {
         const recordedBlob = new Blob(chunks, { type: "video/webm" });
-        setVideoBlob(recordedBlob);
         console.log("Recording complete", recordedBlob);
         handleUpload(recordedBlob);
       };
@@ -119,7 +115,6 @@ function App() {
           setUploadProgress(null);
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
             console.log("File available at", downloadURL);
-            setVideoLink(downloadURL);
             handleInference(downloadURL); // Pass the download URL to inference
           });
         }
@@ -156,15 +151,6 @@ function App() {
       console.error("Inference failed");
       setCurrentState("idle");
     }
-  };
-
-  const getVideo = async (input: string) => {
-    getDownloadURL(
-      ref(getStorage(), `skeletons/${input.toLowerCase()}.mp4`)
-    ).then((url) => {
-      console.log("URL:", url);
-      setSkeletonVideoLink(url);
-    });
   };
 
   let wordOptions = [
