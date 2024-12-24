@@ -111,7 +111,6 @@ function App() {
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
             handleInference(downloadURL);
           });
-          setFilePreview(null);
         }
       );
     } else {
@@ -135,9 +134,15 @@ function App() {
 
       if (response.ok) {
         const data = await response.json();
-        setInference(data.label);
+        if (data.confidence > 0.5) {
+          setInference(data.label);
+        } else {
+          setInference("Unknown");
+        }
+        setFilePreview(null);
       } else {
         console.error("Inference failed");
+        setFilePreview(null);
       }
     } catch (err) {
       console.error("Inference error:", err);
@@ -354,7 +359,6 @@ function App() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            // Show preview of the file:
                             setFilePreview(URL.createObjectURL(file));
                             handleUpload(file);
                           }
