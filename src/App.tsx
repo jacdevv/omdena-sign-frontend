@@ -34,7 +34,6 @@ function App() {
 
   const [video, setVideo] = useState<"text" | "video">("text");
   const [input, setInput] = useState<string>("Senyum");
-
   const [dropDownOpen, setDropDownOpen] = useState<boolean>(false);
 
   // Media stuff
@@ -42,11 +41,12 @@ function App() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [recording, setRecording] = useState<boolean>(false);
 
+  // New state for previewing uploaded file
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [inference, setInference] = useState<string | null>(null);
-
   const [currentState, setCurrentState] = useState<string>("idle");
-
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
 
   const handleInput = (e: string) => {
@@ -75,7 +75,6 @@ function App() {
 
       mediaRecorderRef.current.onstop = () => {
         const recordedBlob = new Blob(chunks, { type: "video/webm" });
-        console.log("Recording complete", recordedBlob);
         handleUpload(recordedBlob);
       };
 
@@ -90,12 +89,10 @@ function App() {
   }, []);
 
   const handleUpload = (blob: Blob) => {
-    console.log("Uploading video blob", blob);
     setUploadProgress(0);
     setCurrentState("Uploading");
     if (blob) {
       const storageRef = ref(storage, `videos/${Date.now()}.webm`);
-
       const uploadTask = uploadBytesResumable(storageRef, blob);
 
       uploadTask.on(
@@ -104,19 +101,17 @@ function App() {
           const progress =
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
-          console.log("Upload is " + progress + "% done");
         },
         (error) => {
           console.error("Upload failed:", error);
         },
         () => {
           setCurrentState("inferring");
-          console.log("Upload complete");
           setUploadProgress(null);
           getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            console.log("File available at", downloadURL);
-            handleInference(downloadURL); // Pass the download URL to inference
+            handleInference(downloadURL);
           });
+          setFilePreview(null);
         }
       );
     } else {
@@ -125,30 +120,28 @@ function App() {
   };
 
   const handleInference = async (downloadURL: string) => {
-    console.log("Inferring...");
-    console.log(`Video link: ${downloadURL}`);
-    const response = await fetch(
-      "https://louisljz-bisindo-sign-lang-recog.hf.space/predict",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          url: downloadURL,
-        }),
-      }
-    );
+    try {
+      const response = await fetch(
+        "https://louisljz-bisindo-sign-lang-recog.hf.space/predict",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ url: downloadURL }),
+        }
+      );
 
-    if (response.ok) {
-      const data = await response.json();
-      setInference(data.label);
-      setCurrentState("idle");
-      console.log(data.label);
-      console.log("Inference successful");
-    } else {
-      console.error("Inference failed");
+      if (response.ok) {
+        const data = await response.json();
+        setInference(data.label);
+      } else {
+        console.error("Inference failed");
+      }
+    } catch (err) {
+      console.error("Inference error:", err);
+    } finally {
       setCurrentState("idle");
     }
   };
@@ -263,7 +256,6 @@ function App() {
                               >
                                 <button
                                   onClick={() => {
-                                    console.log(word);
                                     handleInput(word);
                                   }}
                                 >
@@ -277,7 +269,6 @@ function App() {
                     )}
                   </button>
                 </div>
-
                 <div className="flex justify-center items-center h-full">
                   <input
                     value={toTitleCase(input)}
@@ -296,44 +287,58 @@ function App() {
             )}
             {video == "video" && (
               <div className="relative">
-                <Webcam
-                  ref={webcamRef}
-                  mirrored={true}
-                  audio={false}
-                  videoConstraints={{
-                    width: 1280,
-                    height: 920,
-                    facingMode: "user",
-                  }}
-                  className="rounded-t-3xl relative rounded-b-none border-b-[#346AFF] border-dashed border-b-2 "
-                />
+                {filePreview ? (
+                  <video
+                    src={filePreview}
+                    controls
+                    autoPlay
+                    muted
+                    className="rounded-t-3xl border-b-[#346AFF] border-dashed border-b-2"
+                  />
+                ) : (
+                  <Webcam
+                    ref={webcamRef}
+                    mirrored={true}
+                    audio={false}
+                    videoConstraints={{
+                      width: 1280,
+                      height: 920,
+                      facingMode: "user",
+                    }}
+                    className="rounded-t-3xl border-b-[#346AFF] border-dashed border-b-2"
+                  />
+                )}
+
                 {uploadProgress != null && uploadProgress > 0 && (
                   <div className="absolute top-4 right-4 text-xl z-10 text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                     Upload: {Math.round(uploadProgress)}%
                   </div>
                 )}
-                {currentState != "uploading" && currentState == "inferring" && (
+                {currentState == "inferring" && (
                   <div className="absolute top-4 right-4 text-xl z-10 text-white drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
                     Inferring...
                   </div>
                 )}
-                <div className="absolute left-1/2 -translate-x-1/2 top-56 bg-background rounded-full w-10 h-10 flex justify-center items-center p-2">
-                  {recording && (
-                    <button
-                      onClick={() => {
-                        stopRecording();
-                      }}
-                    >
-                      O
-                    </button>
-                  )}
-                  {!recording && (
-                    <button
-                      className="bg-red-700 w-full h-full rounded-full"
-                      onClick={startRecording}
-                    ></button>
-                  )}
-                </div>
+
+                {!filePreview && (
+                  <div className="absolute left-1/2 -translate-x-1/2 top-56 bg-background rounded-full w-10 h-10 flex justify-center items-center p-2">
+                    {recording && (
+                      <button
+                        onClick={() => {
+                          stopRecording();
+                        }}
+                      >
+                        O
+                      </button>
+                    )}
+                    {!recording && (
+                      <button
+                        className="bg-red-700 w-full h-full rounded-full"
+                        onClick={startRecording}
+                      ></button>
+                    )}
+                  </div>
+                )}
                 <div className="h-full flex flex-col gap-2 items-center">
                   <div className="w-full flex justify-center text-white pt-2">
                     Or
@@ -349,8 +354,9 @@ function App() {
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) {
-                            console.log("File selected:", file);
-                            handleUpload(file); // Pass the file directly
+                            // Show preview of the file:
+                            setFilePreview(URL.createObjectURL(file));
+                            handleUpload(file);
                           }
                         }}
                       />
@@ -395,11 +401,30 @@ function App() {
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+                          d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 
+                          0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 
+                          50 0.59082C77.6142 0.59082 100 22.9766 
+                          100 50.5908ZM9.08144 50.5908C9.08144 73.1895 
+                          27.4013 91.5094 50 91.5094C72.5987 91.5094 
+                          90.9186 73.1895 90.9186 50.5908C90.9186 
+                          27.9921 72.5987 9.67226 50 9.67226C27.4013 
+                          9.67226 9.08144 27.9921 9.08144 50.5908Z"
                           fill="currentColor"
                         />
                         <path
-                          d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+                          d="M93.9676 39.0409C96.393 
+                          38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 
+                          28.8227 92.871 24.3692 89.8167 20.348C85.8452 
+                          15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 
+                          4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 
+                          0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 
+                          1.69328 37.813 4.19778 38.4501 6.62326C39.0873 
+                          9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 
+                          9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 
+                          10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 
+                          17.9648 79.3347 21.5619 82.5849 25.841C84.9175 
+                          28.9121 86.7997 32.2913 88.1811 35.8758C89.083 
+                          38.2158 91.5421 39.6781 93.9676 39.0409Z"
                           fill="currentFill"
                         />
                       </svg>
