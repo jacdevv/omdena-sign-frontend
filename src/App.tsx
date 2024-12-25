@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import Webcam from "react-webcam";
 import { ChevronDown, CloudUpload } from "lucide-react";
 import clsx from "clsx";
@@ -10,6 +10,7 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import firebaseConfig from "../firebase_config.json";
 
 function toTitleCase(str: string) {
   return str.replace(
@@ -19,16 +20,6 @@ function toTitleCase(str: string) {
 }
 
 function App() {
-  const firebaseConfig = {
-    apiKey: "AIzaSyDRxefpEMcL0_CrWCsVraj0eXWuK8PGUuE",
-    authDomain: "omdena-sign-video.firebaseapp.com",
-    projectId: "omdena-sign-video",
-    storageBucket: "omdena-videos",
-    messagingSenderId: "567709085568",
-    appId: "1:567709085568:web:2457cab4f80d2ba047db65",
-    measurementId: "G-T9H43KCMNS",
-  };
-
   const app = initializeApp(firebaseConfig);
   const storage = getStorage(app);
 
@@ -187,10 +178,6 @@ function App() {
     "teman",
     "tidur",
   ];
-
-  useEffect(() => {
-    console.log("Input:", input);
-  }, [input]);
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
