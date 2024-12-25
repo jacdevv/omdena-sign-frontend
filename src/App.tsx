@@ -49,6 +49,8 @@ function App() {
   const [currentState, setCurrentState] = useState<string>("idle");
   const [videoPlaying, setVideoPlaying] = useState<boolean>(false);
 
+  const [confidence, setConfidence] = useState<number | null>(null);
+
   const handleInput = (e: string) => {
     if (e.includes(" ")) {
       setVideoPlaying(false);
@@ -134,7 +136,7 @@ function App() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.confidence > 0.5) {
+        if (data.confidence > 0.4) {
           setInference(data.label);
         } else {
           setInference("Unknown");
@@ -448,7 +450,9 @@ function App() {
               <div className="w-full h-full grid place-items-center text-white text-4xl">
                 {inference
                   ? String(inference).charAt(0).toUpperCase() +
-                    String(inference).slice(1)
+                    String(inference).slice(1) +
+                    " " +
+                    (confidence ? `(${Math.round(confidence * 100)}%)` : "")
                   : "Waiting..."}
               </div>
             )}
