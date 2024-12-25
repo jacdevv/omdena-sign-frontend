@@ -138,8 +138,10 @@ function App() {
         const data = await response.json();
         if (data.confidence > 0.4) {
           setInference(data.label);
+          setConfidence(data.confidence);
         } else {
           setInference("Unknown");
+          setConfidence(data.confidence);
         }
         setFilePreview(null);
       } else {
