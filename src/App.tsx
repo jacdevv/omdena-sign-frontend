@@ -11,6 +11,12 @@ import {
 } from "firebase/storage";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import firebaseConfig from "../firebase_config.json";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Button } from "./components/ui/button";
 
 function toTitleCase(str: string) {
   return str.replace(
@@ -23,6 +29,7 @@ function App() {
   const app = initializeApp(firebaseConfig);
   const storage = getStorage(app);
 
+  const [closestWord, setClosestWord] = useState<string | null>(null);
   const [video, setVideo] = useState<"text" | "video">("text");
   const [input, setInput] = useState<string>("Senyum");
   const [dropDownOpen, setDropDownOpen] = useState<boolean>(false);
@@ -130,8 +137,10 @@ function App() {
         if (data.confidence > 0.4) {
           setInference(data.label);
           setConfidence(data.confidence);
+          setClosestWord(null);
         } else {
           setInference("Unknown");
+          setClosestWord(data.label);
           setConfidence(data.confidence);
         }
         setFilePreview(null);
@@ -436,13 +445,64 @@ function App() {
               </div>
             )}
             {video == "video" && (
-              <div className="w-full h-full grid place-items-center text-white text-4xl">
-                {inference
-                  ? String(inference).charAt(0).toUpperCase() +
-                    String(inference).slice(1) +
-                    " " +
-                    (confidence ? `(${Math.round(confidence * 100)}%)` : "")
-                  : "Waiting..."}
+              <div className="flex justify-center items-center h-full relative">
+                <div className="absolute top-0 px-6 py-4 text-white flex gap-4 w-full items-center">
+                  <p>From</p>
+                  <button
+                    className={clsx(
+                      "w-64 h-10 bg-background rounded-3xl flex justify-center items-center px-6 relative",
+                      dropDownOpen && "rounded-t-3xl rounded-b-none"
+                    )}
+                    onClick={() => {
+                      setDropDownOpen(!dropDownOpen);
+                    }}
+                  >
+                    <p className="text-blue-500">Words</p>
+                    <div className="flex justify-end w-full">
+                      <ChevronDown />
+                    </div>
+                    {dropDownOpen && (
+                      <div className="absolute top-full left-0 bg-background w-64 h-40 rounded-b-3xl">
+                        <ScrollArea className="h-40">
+                          <ul className="flex flex-col items-start px-6 gap-2">
+                            {wordOptions.map((word) => (
+                              <li
+                                key={word}
+                                className={clsx(
+                                  "hover:text-[#346AFF]",
+                                  word === input && "text-[#346AFF]"
+                                )}
+                              >
+                                <button>{toTitleCase(word)}</button>
+                              </li>
+                            ))}
+                          </ul>
+                        </ScrollArea>
+                      </div>
+                    )}
+                  </button>
+                </div>
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <Button variant="link">
+                      <div className="w-full h-full grid place-items-center text-white text-4xl">
+                        {inference
+                          ? String(inference).charAt(0).toUpperCase() +
+                            String(inference).slice(1) +
+                            " "
+                          : "Waiting..."}
+                      </div>
+                    </Button>
+                  </HoverCardTrigger>
+                  <HoverCardContent className="bg-[#0D0F12] flex justify-center w-56">
+                    <span className="text-[#346AFF] text-center">
+                      {confidence && <span>Confidence: {confidence}</span>}
+                      {closestWord && (
+                        <p>Closest word: {toTitleCase(closestWord)} </p>
+                      )}
+                    </span>
+                  </HoverCardContent>
+                </HoverCard>
               </div>
             )}
           </div>

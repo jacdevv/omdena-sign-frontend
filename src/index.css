@@ -4,6 +4,7 @@
 
 :root {
   font-family: "Monocraft", Helvetica, Arial, sans-serif;
+  src: url("/src/assets/Monocraft.ttc") format("truetype-collection");
   line-height: 1.5;
   font-weight: 400;
 
