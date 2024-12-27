@@ -97,7 +97,7 @@ function App() {
 
       uploadTask.on(
         "state_changed",
-        (snapshot) => {
+        (snapshot: any) => {
           const progress =
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
@@ -447,7 +447,7 @@ function App() {
             {video == "video" && (
               <div className="flex justify-center items-center h-full relative">
                 <div className="absolute top-0 px-6 py-4 text-white flex gap-4 w-full items-center">
-                  <p>From</p>
+                  <p>Available</p>
                   <button
                     className={clsx(
                       "w-64 h-10 bg-background rounded-3xl flex justify-center items-center px-6 relative",
