@@ -97,7 +97,7 @@ function App() {
 
             uploadTask.on(
                 "state_changed",
-                (snapshot) => {
+                (snapshot: any) => {
                     const progress =
                         (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     setUploadProgress(progress);
@@ -193,6 +193,7 @@ function App() {
     useEffect(() => {
         document.title = "Omdena Sign Translation";
     }, []);
+
     return (
         <div className="h-screen w-screen overflow-hidden relative">
             <nav className="mx-auto max-w-3xl mt-4 flex justify-between">
