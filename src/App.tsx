@@ -191,7 +191,7 @@ function App() {
     ];
 
     useEffect(() => {
-        document.title = "Omdena Sign Translation";
+        document.title = "Sign Translation";
     }, []);
 
     return (
