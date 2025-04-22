@@ -198,7 +198,7 @@ function App() {
         <div className="h-screen w-screen overflow-hidden relative">
             <nav className="mx-auto max-w-3xl mt-4 flex justify-between">
                 <h1 className="font-bold text-xl text-white">
-                    Indonesian Sign Translation by Omdena
+                    Indonesian Sign Translation
                 </h1>
                 <a
                     className="flex items-center gap-2"
